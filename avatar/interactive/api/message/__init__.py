@@ -105,7 +105,21 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     messages = json.loads(req.get_body())
 
-    response = chat_complete(messages, functions= functions, function_call= "auto")
+    try:
+        response = chat_complete(messages, functions=functions, function_call="auto")
+    
+        if "choices" not in response or not response["choices"]:
+            raise ValueError(f"La respuesta no tiene 'choices': {json.dumps(response)}")
+    
+        response_message = response["choices"][0]["message"]
+    
+    except Exception as e:
+        logging.error(f"Error al procesar llamada a OpenAI: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Falló llamada a OpenAI", "details": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
 
     products = []
     
